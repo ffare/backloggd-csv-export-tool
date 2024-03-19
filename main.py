@@ -1,7 +1,7 @@
 import requests
 import re
 
-username = 'NOWITSREYNTIME17'
+username = 'TheJokeDetector'
 
 def getListFromKeyword(text, keyword):
     pattern = re.compile(keyword)
@@ -23,16 +23,20 @@ with open('debug/result.html', 'w') as file:
     file.write(x.text)
 
 link_list = []
+gameName_list = []
 maxpages = getMaxNumberofPages(username, x.text)
 for i in range(maxpages):
     x = requests.get('https://www.backloggd.com/u/'+username+'/wishlist/?page='+str(i+1))
     
-    list = getListFromKeyword(x.text, r'<a href="/games/[^/]+/')
-    #game_name_keyword = '<div class="game-text-centered"'
-   
-    #game_name_list = []
+    list = getListFromKeyword(x.text, r'<a href="/games/[^/]+/')    
     for w in list:
         link_list.append(w[len('<a href=/"'):])
     
+    list = getListFromKeyword(x.text, r'<div class="game-text-centered".*')
+    for w in list:
+        w_split = w.split('>')
+        gameName_list.append(w_split[1].split('</div')[0].lstrip())
+
 print(link_list)
-print('\nTotal numer of games: '+str(len(link_list)))
+print('\n')
+print(gameName_list)

@@ -9,14 +9,11 @@ with open('result.html', 'w') as file:
     x = requests.get('https://www.backloggd.com/u/Hollow/wishlist/')
     file.write(x.text)
 
-list = getListFromKeyword(x.text, r'href="/u/Hollow/wishlist\?page=.*')
-
-page_list = []
-for w in list[0].split():
-    currword = re.search('page=.', w)
-    if currword:
-        page_list.append(currword.group()[-1])
+list = getListFromKeyword(x.text, r'<div class="game-text-centered".*')
+for w in list:
+    w_split = w.split('>')
+    print(w_split[1].split('</div')[0].lstrip())
     
     
 #print(list)
-print(page_list)
+#print(list)
