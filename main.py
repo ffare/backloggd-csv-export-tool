@@ -1,21 +1,20 @@
 import requests
 import re
 
+def getListFromKeyword(text, keyword):
+    pattern = re.compile(keyword)
+    return pattern.findall(text)
+
 with open('debug/result.html', 'w') as file:
     x = requests.get('https://www.backloggd.com/u/Hollow/wishlist/')
     file.write(x.text)
 
-link_keyword = '<a href="/games/'
-game_name_keyword = '<div class="game-text-centered"'
+list = getListFromKeyword(x.text, r'<a href="/games/[^/]+/')
+#game_name_keyword = '<div class="game-text-centered"'
 
 link_list = []
-game_name_list = []
-
-list = re.findall(r'<a href="/games/.*', x.text)
+#game_name_list = []
 for w in list:
-    matches = re.search(r'games/[^/]+/', w)
-    if matches:
-        link_list.append(matches.group())
-
+    link_list.append(w[len('<a href=/"'):])
     
 print(link_list)
