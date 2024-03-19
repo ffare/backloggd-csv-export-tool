@@ -1,6 +1,8 @@
 import requests
 import re
 
+username = 'NOWITSREYNTIME17'
+
 def getListFromKeyword(text, keyword):
     pattern = re.compile(keyword)
     return pattern.findall(text)
@@ -17,13 +19,13 @@ def getMaxNumberofPages(user, text):
     return int(max(page_list, key=int))
 
 with open('debug/result.html', 'w') as file:
-    x = requests.get('https://www.backloggd.com/u/Hollow/wishlist/')
+    x = requests.get('https://www.backloggd.com/u/'+username+'/wishlist/')
     file.write(x.text)
 
 link_list = []
-maxpages = getMaxNumberofPages('Hollow', x.text)
+maxpages = getMaxNumberofPages(username, x.text)
 for i in range(maxpages):
-    x = requests.get('https://www.backloggd.com/u/Hollow/wishlist/?page='+str(i+1))
+    x = requests.get('https://www.backloggd.com/u/'+username+'/wishlist/?page='+str(i+1))
     
     list = getListFromKeyword(x.text, r'<a href="/games/[^/]+/')
     #game_name_keyword = '<div class="game-text-centered"'
@@ -33,3 +35,4 @@ for i in range(maxpages):
         link_list.append(w[len('<a href=/"'):])
     
 print(link_list)
+print('\nTotal numer of games: '+str(len(link_list)))
