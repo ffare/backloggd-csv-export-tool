@@ -1,19 +1,21 @@
 import requests
 import re
 
-def getListFromKeyword(text, keyword):
-    pattern = re.compile(keyword)
-    return pattern.findall(text)
+def getListFromKeyword(text, keyword, flags=0):
+    return re.findall(keyword, text, flags)
 
-with open('result.html', 'w') as file:
-    x = requests.get('https://www.backloggd.com/u/Hollow/wishlist/')
-    file.write(x.text)
+def getCompanyNames(text):
+    list = getListFromKeyword(text, r'<div class="col-auto pl-lg-1 sub-title">(.*?)</div>', flags=re.DOTALL)
+    new_list = re.findall(r'<a href="/company/.*?>(.*?)</a>', list[0], flags=re.DOTALL)
+    return new_list
 
-list = getListFromKeyword(x.text, r'<div class="game-text-centered".*')
-for w in list:
-    w_split = w.split('>')
-    print(w_split[1].split('</div')[0].lstrip())
-    
-    
+with open('result.html', 'w', encoding='utf-8') as file:
+    x = requests.get('https://www.backloggd.com/games/heroes-of-might-and-magic-ii-gold/')
+    if (x.status_code == 200):
+        file.write(x.text)
+        
+print(getCompanyNames(x.text))  
+
+
 #print(list)
 #print(list)
