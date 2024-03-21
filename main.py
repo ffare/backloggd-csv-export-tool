@@ -4,9 +4,8 @@ import time
 
 username = 'Hollow'
 
-def getListFromKeyword(text, keyword):
-    pattern = re.compile(keyword)
-    return pattern.findall(text)
+def getListFromKeyword(text, keyword, flags=0):
+    return re.findall(keyword, text, flags)
 
 # Parse through and find the maximum number of pages
 def getMaxNumberofPages(user, text):
@@ -27,10 +26,19 @@ def getGameName(text):
     list = getListFromKeyword(text, r'<div class="col-12 pr-0">\n.*\n.*\n.*')
     return list[0].split('<h1 class="mb-0">')[1][:-5]
 
-def getCompanyNames(text):
+def getCompanyNames(text):    
     list = getListFromKeyword(text, r'<div class="col-auto pl-lg-1 sub-title">(.*?)</div>', flags=re.DOTALL)
-    new_list = re.findall(r'<a href="/company/.*?>(.*?)</a>', list[0], flags=re.DOTALL)
-    return new_list
+    if not list:
+        return ['TDB']
+    else:
+        return re.findall(r'<a href="/company/.*?>(.*?)</a>', list[0], flags=re.DOTALL)
+
+def getGameName(text):
+    list = getListFromKeyword(text, r'<div class="col-auto pr-1">(.*?)</div>', flags=re.DOTALL)
+    if not list:
+        return 'TDB'
+    else:
+        return re.findall(r'<h1 class="mb-0">(.*?)</h1>', list[0], flags=re.DOTALL)[0]
 
 with open('debug/result.html', 'w') as file:
     x = requests.get('https://www.backloggd.com/u/'+username+'/wishlist/')
@@ -48,19 +56,16 @@ for i in range(maxpages):
         w = w[10:]       
         link_list.append(w)
                        
-        print('https://www.backloggd.com/games/'+str(w))
+        print('https://www.backloggd.com/'+str(w))
         
         s_time = time.time()
         y = requests.get('https://www.backloggd.com/'+str(w))
         print("elapsed time: "+str(time.time() - s_time)[:4])
         
+        print(getGameName(y.text))
         print(getReleaseDate(y.text))
+        print(getCompanyNames(y.text))
         print('\n')
-        
-    list = getListFromKeyword(x.text, r'<div class="game-text-centered".*')
-    for w in list:
-        w_split = w.split('>')
-        gameName_list.append(w_split[1].split('</div')[0].lstrip())
 
 date_list = []
 for link in link_list:
