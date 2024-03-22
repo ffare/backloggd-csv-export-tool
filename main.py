@@ -12,6 +12,9 @@ def getListFromKeyword(text, keyword, flags=0):
 # Parse through and find the maximum number of pages
 def getMaxNumberofPages(user, text):
     list = getListFromKeyword(text, r'href="/u/'+user+r'/wishlist\?page=.*')
+    if not list:
+        print('Could not get number of pages. Exiting...')
+        exit()
     page_list = []
     for w in list[0].split():
         currword = re.search('page=.', w)
@@ -42,27 +45,35 @@ def getGameName(text):
 def getRequest(text):
     return requests.get(text, timeout=5)
 
-with open('debug/result.html', 'w', encoding='utf-8') as file, open('export/export.csv', 'w', newline='') as csvf:
+with open('debug/result.html', 'w', encoding='utf-8') as file, open('export/export.csv', 'w', newline='', encoding='utf-8') as csvf:
     x = requests.get('https://www.backloggd.com/u/'+username+'/wishlist/')
     file.write(x.text)
     writer = csv.writer(csvf, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
     writer.writerow(['Name', 'Release Date', 'Companies'])  # Write header 
     
-    link_list = []
     maxpages = getMaxNumberofPages(username, x.text)
-    for i in range(maxpages):
-        x = requests.get('https://www.backloggd.com/u/'+username+'/wishlist/?page='+str(i+1))
+    link_list = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=maxpages) as executor1:              
+        p_results = [executor1.submit(getRequest, 'https://www.backloggd.com/u/'+username+'/wishlist/?page='+str(i+1)) for i in range(maxpages)]       
         
-        list = getListFromKeyword(x.text, r'<a href="/games/[^/]+/')
-        list = [w[10:] for w in list]
+        for future in concurrent.futures.as_completed(p_results):
+            x = future.result()
+            list = getListFromKeyword(x.text, r'<a href="/games/[^/]+/')
+            link_list.extend([w[10:] for w in list])
         
-        # Fetch information after accessing links        
-        with concurrent.futures.ThreadPoolExecutor(max_workers=len(list)) as executor:
-            results = [executor.submit(getRequest, 'https://www.backloggd.com/'+str(w)) for w in list]
+    print(len(link_list))
+    t = time.time()
+    # Fetch information after accessing links        
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor2:       
+        results = [executor2.submit(getRequest, 'https://www.backloggd.com/'+str(w)) for w in link_list]
+        print(time.time()-t)
         
-            for future in concurrent.futures.as_completed(results):
-                y = future.result()
-                    
-                writer.writerow((getGameName(y.text), getReleaseDate(y.text), getCompanyNames(y.text)))
-                print((getGameName(y.text), getReleaseDate(y.text), getCompanyNames(y.text)))
-                print('\n')
+        for future in concurrent.futures.as_completed(results):
+            y = future.result()
+            
+            print((getGameName(y.text), getReleaseDate(y.text), getCompanyNames(y.text)))
+            print('....')
+            writer.writerow((getGameName(y.text), getReleaseDate(y.text), getCompanyNames(y.text)))                    
+            print('done\n')
+
+    print('Elapsed time: '+str(time.time()-t))
